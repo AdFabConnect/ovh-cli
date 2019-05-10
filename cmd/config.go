@@ -24,9 +24,6 @@ var displayConfig = &cobra.Command{
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Ovh configuration",
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
 }
 
 func init() {
