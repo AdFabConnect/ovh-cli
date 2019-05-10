@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"sort"
 	"strconv"
+	"sync"
 
 	ovhClient "github.com/AdFabConnect/ovh-cli/ovh"
 	"github.com/AdFabConnect/ovh-cli/utils"
@@ -52,18 +54,29 @@ var listApplicationCmd = &cobra.Command{
 		}
 		table := utils.GetTable()
 
-		for _, applicationID := range applicationsID {
-			if isQuiet {
+		sort.Ints(applicationsID)
+		if isQuiet {
+			for _, applicationID := range applicationsID {
 				table.Append([]string{strconv.Itoa(applicationID)})
-			} else {
-				application := fetchApplication(client, applicationID)
+			}
+			table.SetHeaderLine(false)
+		} else {
+			applications := make([]PartialApplication, len(applicationsID))
+			var wg sync.WaitGroup
+			for index, applicationID := range applicationsID {
+				wg.Add(1)
+				go func(index int, applicationID int) {
+					defer wg.Done()
+					client := ovhClient.GetOvhClient()
+					application := fetchApplication(client, applicationID)
+					applications[index] = application
+				}(index, applicationID)
+			}
+			wg.Wait()
+			table.SetHeader(getHeaderToDisplay())
+			for _, application := range applications {
 				table.Append(application.toArrow())
 			}
-		}
-		if !isQuiet {
-			table.SetHeader(getHeaderToDisplay())
-		} else {
-			table.SetHeaderLine(false)
 		}
 		table.Render()
 	},
