@@ -82,6 +82,21 @@ var listApplicationCmd = &cobra.Command{
 	},
 }
 
+var deleteApplicationCmd = &cobra.Command{
+	Use:   "delete [application id]...",
+	Short: "delete applications",
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		client := ovhClient.GetOvhClient()
+		for _, applicationID := range args {
+			err := client.Delete(applicationURI+applicationID, nil)
+			if err != nil {
+				log.Errorln("Unable to delete application with id", applicationID)
+			}
+		}
+	},
+}
+
 var applicationCmd = &cobra.Command{
 	Use:   "application",
 	Short: "Manipulate applications",
@@ -90,5 +105,6 @@ var applicationCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(applicationCmd)
 	applicationCmd.AddCommand(listApplicationCmd)
+	applicationCmd.AddCommand(deleteApplicationCmd)
 	listApplicationCmd.Flags().BoolP("quiet", "q", false, "Only display application id")
 }
