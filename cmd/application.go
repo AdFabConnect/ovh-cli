@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strconv"
 
 	ovhClient "github.com/AdFabConnect/ovh-cli/ovh"
@@ -21,6 +20,14 @@ type PartialApplication struct {
 	Status         string `json:"status"`
 }
 
+func getHeaderToDisplay() []string {
+	return []string{"Id", "Key", "Name", "Description", "Status"}
+}
+
+func (a *PartialApplication) toArrow() []string {
+	return []string{strconv.Itoa(a.ApplicationID), a.ApplicationKey, a.Name, a.Description, a.Status}
+}
+
 func fetchApplication(client *ovh.Client, applicationID int) PartialApplication {
 	var application PartialApplication
 	err := client.Get(applicationURI+strconv.Itoa(applicationID), &application)
@@ -37,31 +44,28 @@ var listApplicationCmd = &cobra.Command{
 		applicationsID := []int{}
 		client := ovhClient.GetOvhClient()
 		isQuiet, _ := cmd.Flags().GetBool("quiet")
-		data := [][]string{}
 
 		err := client.Get(applicationURI, &applicationsID)
 		if err != nil {
 			log.Errorln("Unable to list applications:", err)
 			return
 		}
+		table := utils.GetTable()
 
 		for _, applicationID := range applicationsID {
 			if isQuiet {
-				fmt.Println(applicationID)
+				table.Append([]string{strconv.Itoa(applicationID)})
 			} else {
 				application := fetchApplication(client, applicationID)
-				data = append(data, []string{strconv.Itoa(applicationID), application.ApplicationKey, application.Name, application.Description, application.Status})
+				table.Append(application.toArrow())
 			}
 		}
 		if !isQuiet {
-			table := utils.GetTable()
-			table.SetHeader([]string{"Id", "Key", "Name", "Description", "Status"})
-
-			for _, v := range data {
-				table.Append(v)
-			}
-			table.Render()
+			table.SetHeader(getHeaderToDisplay())
+		} else {
+			table.SetHeaderLine(false)
 		}
+		table.Render()
 	},
 }
 
