@@ -1,16 +1,14 @@
 package ovh
 
 import (
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/AdFabConnect/ovh-cli/utils"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
 
-type apiConfig struct {
+type APIConfig struct {
 	Profile           string
 	Endpoint          string
 	ApplicationKey    string
@@ -22,14 +20,19 @@ func getHeaderToDisplay() []string {
 	return []string{"Profile", "Application key", "Application secret", "Consumer secret", "Endpoint"}
 }
 
-func (c *apiConfig) toArrow() []string {
+func (c *APIConfig) toArrow() []string {
 	return []string{c.Profile, c.ApplicationKey, c.ApplicationSecret, c.ConsumerKey, c.Endpoint}
 }
 
-func getAPIConfig(profile string) apiConfig {
+func GetCurrentAPIConfig() APIConfig {
+	profile := viper.GetString("profile")
+	return getAPIConfig(profile)
+}
+
+func getAPIConfig(profile string) APIConfig {
 	specificConfig := viper.Sub(profile)
 	if specificConfig != nil {
-		return apiConfig{
+		return APIConfig{
 			Profile:           profile,
 			Endpoint:          specificConfig.GetString("endpoint"),
 			ApplicationKey:    specificConfig.GetString("application-key"),
@@ -37,13 +40,13 @@ func getAPIConfig(profile string) apiConfig {
 			ConsumerKey:       specificConfig.GetString("consumer-key"),
 		}
 	}
-	return apiConfig{Profile: profile}
+	return APIConfig{Profile: profile}
 }
 
 // DisplayCurrentOvhConfig display current OVH configuration used to communicate with OVH API
 func DisplayCurrentOvhConfig() {
 	profile := viper.GetString("profile")
-	table := tablewriter.NewWriter(os.Stdout)
+	table := utils.GetTable()
 	table.SetHeader(getHeaderToDisplay())
 	currentConfig := getAPIConfig(profile)
 	table.Append(currentConfig.toArrow())
@@ -63,7 +66,7 @@ func DisplayOvhConfig() {
 		}
 	}
 	sort.Strings(profiles)
-	table := tablewriter.NewWriter(os.Stdout)
+	table := utils.GetTable()
 	table.SetHeader(getHeaderToDisplay())
 	for _, profile := range profiles {
 		currentConfig := getAPIConfig(profile)
